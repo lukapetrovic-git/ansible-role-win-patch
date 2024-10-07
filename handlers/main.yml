@@ -1,0 +1,5 @@
+---
+- name: Restart Windows update service
+  ansible.windows.win_service:
+    name: wuauserv
+    state: restarted

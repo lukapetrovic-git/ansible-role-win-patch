@@ -1,0 +1,29 @@
+---
+# Windows update categories to install updates from
+win_patch_categories:
+  - CriticalUpdates
+  - DefinitionUpdates
+  - SecurityUpdates
+  - Updates
+  - UpdateRollups
+
+# Skip optional Windows updates
+win_patch_skip_optional: true
+
+# Disable automatic Windows updates (in a non AD environment)
+win_patch_disable_automatic: true
+
+# Check if there is a reboot pending and reboot BEFORE starting updates
+win_patch_reboot_before_if_required: true
+
+# Reboot timeout in seconds (time to wait for the node to be available again)
+win_patch_reboot_timeout: 1800
+
+# PowerShell commad determine if the machine is ready after reboot (expects success)
+win_patch_reboot_test_command: exit (Get-Service -Name WinRM).Status -ne "Running"
+
+# (Optional) A list of update titles or KB numbers used to specify which updates are to be excluded
+# win_patch_reject_list: []
+
+# (Optional) Append update progress to the specified file. The directory must already exist.
+# win_patch_log_path: ""
