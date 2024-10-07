@@ -1,0 +1,101 @@
+---
+- name: Disable automatic Windows updates
+  ansible.windows.win_regedit:
+    path: HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate\AU
+    name: "{{ item.name }}"
+    data: "{{ item.value }}"
+    type: dword
+  loop:
+    - name: NoAutoUpdate
+      value: 1
+    - name: AutoInstallMinorUpdates
+      value: 0
+  notify: Restart Windows update service
+  when: win_patch_disable_automatic | bool
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+  when: win_patch_disable_automatic | bool
+
+- name: Check for pending Windows updates
+  ansible.windows.win_updates:
+    category_names: "{{ win_patch_categories }}"
+    state: searched
+  register: win_updates_check
+
+- name: Reboot host if required
+  when: win_updates_check.found_update_count > 0
+  block:
+    - name: Check if reboot is required
+      ansible.windows.win_powershell:
+        script: |
+          $reboot_required = $false
+
+          if (
+            (Test-Path 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending') -or
+            (Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired')
+          ) {
+            $reboot_required = $true
+          }
+
+          $operations = (Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\').GetValue('PendingFileRenameOperations')
+          if (!($null -eq $operations)) {
+            $trueOperationsCount = $operations.Length / 2
+            $trueRenames = [System.Collections.Generic.Dictionary[string, string]]::new($trueOperationsCount)
+            for ($i = 0; $i -ne $trueOperationsCount; $i++) {
+              $operationSource = $operations[$i * 2]
+              $operationDestination = $operations[$i * 2 + 1]
+              if ($operationDestination.Length -eq 0) {
+                continue
+              } else {
+                $trueRenames[$operationSource] = $operationDestination
+              }
+            }
+            $reboot_required = $trueRenames.Count -gt 0
+          }
+
+          return $reboot_required
+      register: win_reboot_required
+      changed_when: false
+      when: win_patch_reboot_before_if_required | bool
+
+    - name: Reboot the server
+      ansible.windows.win_reboot:
+        reboot_timeout: "{{ win_patch_reboot_timeout }}"
+        test_command: "{{ win_patch_reboot_test_command }}"
+      when:
+        - win_reboot_required.output[0] | bool
+        - win_patch_reboot_before_if_required | bool
+
+    - name: Install updates
+      block:
+        - name: Install Windows updates
+          ansible.windows.win_updates:
+            category_names: "{{ win_patch_categories }}"
+            state: installed
+            skip_optional: "{{ win_patch_skip_optional }}"
+            reboot: false
+            reject_list: "{{ win_patch_reject_list | default([], true) }}"
+            log_path: "{{ win_patch_log_path | default(omit) }}"
+          register: win_updates_result
+      rescue:
+        - name: "[Update Rescue attempt] Reboot the server"
+          ansible.windows.win_reboot:
+            reboot_timeout: "{{ win_patch_reboot_timeout }}"
+            test_command: "{{ win_patch_reboot_test_command }}"
+
+        - name: "[Update Rescue attempt] Attempt installing Windows updates again"
+          ansible.windows.win_updates:
+            category_names: "{{ win_patch_categories }}"
+            state: installed
+            skip_optional: "{{ win_patch_skip_optional }}"
+            reboot: false
+            reject_list: "{{ win_patch_reject_list | default([], true) }}"
+            log_path: "{{ win_patch_log_path | default(omit) }}"
+          register: win_updates_result
+
+    - name: Reboot the server
+      ansible.windows.win_reboot:
+        reboot_timeout: "{{ win_patch_reboot_timeout }}"
+        test_command: "{{ win_patch_reboot_test_command }}"
+      when: win_updates_result.reboot_required | bool

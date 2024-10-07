@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  role_name: win_patch
+  author: lukapetrovic
+  description: Ansible role to install patches (upgrades) on Windows Servers
+  license: MIT
+  min_ansible_version: 2.10.0
+  platforms:
+    - name: Windows
+      versions:
+        - all
+  galaxy_tags:
+    - windows
+    - patching
+    - update
+    - windowsupdate
+
+dependencies: []
