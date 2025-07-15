@@ -69,8 +69,7 @@
             category_names: "{{ win_patch_categories }}"
             state: installed
             skip_optional: "{{ win_patch_skip_optional }}"
-            reboot: true
-            reboot_timeout: "{{ win_patch_reboot_timeout }}"
+            reboot: false
             reject_list: "{{ win_patch_reject_list | default([], true) }}"
             log_path: "{{ win_patch_log_path | default(omit) }}"
           register: win_updates_result
@@ -85,8 +84,7 @@
             category_names: "{{ win_patch_categories }}"
             state: installed
             skip_optional: "{{ win_patch_skip_optional }}"
-            reboot: true
-            reboot_timeout: "{{ win_patch_reboot_timeout }}"
+            reboot: false
             reject_list: "{{ win_patch_reject_list | default([], true) }}"
             log_path: "{{ win_patch_log_path | default(omit) }}"
           register: win_updates_result
