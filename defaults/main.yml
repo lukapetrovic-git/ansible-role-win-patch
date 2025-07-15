@@ -10,18 +10,24 @@ win_patch_categories:
 # Skip optional Windows updates
 win_patch_skip_optional: true
 
-# Disable automatic Windows updates (in a non AD environment)
-win_patch_disable_automatic: true
+# Set Windows update registry options (in a non AD environment) - by default disables all automatic updates
+# https://learn.microsoft.com/de-de/security-updates/windowsupdateservices/18127499
+# A third key of state can be provided for each element in the list, defaults to present
+win_patch_registry_options:
+  - name: NoAutoUpdate
+    value: 1
+  - name: AutoInstallMinorUpdates
+    value: 0
+    # state: present/absent
 
 # Check if there is a reboot pending and reboot BEFORE starting updates
 win_patch_reboot_before_if_required: true
 
 # Reboot timeout in seconds (time to wait for the node to be available again)
-win_patch_reboot_timeout: 1800
+win_patch_reboot_timeout: 3600
 
 # PowerShell commad determine if the machine is ready after reboot (expects success)
 win_patch_reboot_test_command: exit (Get-Service -Name WinRM).Status -ne "Running"
-
 # (Optional) A list of update titles or KB numbers used to specify which updates are to be excluded
 # win_patch_reject_list: []
 

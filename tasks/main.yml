@@ -1,21 +1,16 @@
 ---
-- name: Disable automatic Windows updates
+- name: Set Automatic Windows update options
   ansible.windows.win_regedit:
     path: HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate\AU
     name: "{{ item.name }}"
     data: "{{ item.value }}"
+    state: "{{ item.state | default('present', true) }}"
     type: dword
-  loop:
-    - name: NoAutoUpdate
-      value: 1
-    - name: AutoInstallMinorUpdates
-      value: 0
+  loop: "{{ win_patch_registry_options }}"
   notify: Restart Windows update service
-  when: win_patch_disable_automatic | bool
 
 - name: Flush handlers
   ansible.builtin.meta: flush_handlers
-  when: win_patch_disable_automatic | bool
 
 - name: Check for pending Windows updates
   ansible.windows.win_updates:
