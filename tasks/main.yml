@@ -93,4 +93,5 @@
       ansible.windows.win_reboot:
         reboot_timeout: "{{ win_patch_reboot_timeout }}"
         test_command: "{{ win_patch_reboot_test_command }}"
+        post_reboot_delay: "{{ win_patch_post_reboot_delay }}"
       when: win_updates_result.reboot_required | bool
