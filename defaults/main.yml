@@ -37,4 +37,3 @@ win_patch_post_reboot_delay: 60
 
 # (Optional) Append update progress to the specified file. The directory must already exist.
 # win_patch_log_path: ""
-
